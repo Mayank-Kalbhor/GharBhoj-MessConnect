@@ -1,0 +1,82 @@
+export enum UserRole {
+  CUSTOMER = 'CUSTOMER',
+  VENDOR = 'VENDOR',
+  DELIVERY_PARTNER = 'DELIVERY_PARTNER',
+  ADMIN = 'ADMIN'
+}
+
+export enum MessStatus {
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  INACTIVE = 'INACTIVE'
+}
+
+export enum MealType {
+  BREAKFAST = 'BREAKFAST',
+  LUNCH = 'LUNCH',
+  DINNER = 'DINNER',
+  SNACK = 'SNACK'
+}
+
+export enum SubscriptionStatus {
+  ACTIVE = 'ACTIVE',
+  PAUSED = 'PAUSED',
+  CANCELLED = 'CANCELLED',
+  EXPIRED = 'EXPIRED',
+  COMPLETED = 'COMPLETED'
+}
+
+export enum OrderType {
+  ONE_TIME = 'ONE_TIME',
+  SUBSCRIPTION_MEAL = 'SUBSCRIPTION_MEAL'
+}
+
+export enum OrderStatus {
+  PLACED = 'PLACED',
+  ACCEPTED = 'ACCEPTED',
+  PREPARING = 'PREPARING',
+  OUT_FOR_DELIVERY = 'OUT_FOR_DELIVERY',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED',
+  SKIPPED = 'SKIPPED'
+}
+
+export enum PaymentType {
+  ORDER_PAYMENT = 'ORDER_PAYMENT',
+  SUBSCRIPTION_PAYMENT = 'SUBSCRIPTION_PAYMENT',
+  REFUND = 'REFUND',
+  WALLET_TOPUP = 'WALLET_TOPUP'
+}
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
+  REFUNDED = 'REFUNDED'
+}
+
+export enum PayoutStatus {
+  PENDING = 'PENDING',
+  PROCESSED = 'PROCESSED',
+  FAILED = 'FAILED'
+}
+
+export enum DeliveryStatus {
+  ASSIGNED = 'ASSIGNED',
+  PICKED_UP = 'PICKED_UP',
+  DELIVERED = 'DELIVERED',
+  FAILED = 'FAILED'
+}
+
+export enum WalletTxnType {
+  CREDIT = 'CREDIT',
+  DEBIT = 'DEBIT'
+}
+
+export enum NotificationType {
+  ORDER_UPDATE = 'ORDER_UPDATE',
+  SUBSCRIPTION_REMINDER = 'SUBSCRIPTION_REMINDER',
+  PROMOTIONAL = 'PROMOTIONAL',
+  SYSTEM = 'SYSTEM'
+}
