@@ -4,9 +4,7 @@
 **Date:** September 15, 2026
 **Companion files:** `schema.prisma`, `DB_Schema_Reference.md`
 
-**Purpose of this document:** Section 4 of `DB_Schema_Reference.md` listed the business rules the database schema cannot enforce by itself. This document expands each of those into a precise, numeric formula with worked examples and edge cases, so an AI coding assistant (or a human developer) implements the exact same behavior every time — not a plausible-sounding guess.
-
-**How to use this with an AI coding assistant:** Paste the relevant rule block (formula + worked example + edge cases) directly above the prompt asking it to implement that feature. Tell it: "Implement exactly this logic, including the edge cases listed. Do not invent alternate behavior."
+**Purpose of this document:** Section 4 of `DB_Schema_Reference.md` listed the business rules the database schema cannot enforce by itself. This document expands each of those into a precise, numeric formula with worked examples and edge cases, ensuring consistent implementation of domain logic across all services.
 
 ---
 
@@ -216,7 +214,7 @@ Per `DB_Schema_Reference.md` §4 rule 12: this is implemented as **cancel + recr
 
 ---
 
-## 12. Summary Checklist (for code review / AI-assistant self-check)
+## 12. Summary Checklist (for code review)
 
 - [ ] Every money formula above rounds only at the final step, using `Decimal`, never `Float`.
 - [ ] `ordersPlaced` increments happen inside a locked transaction with the capacity check (Rule 6).

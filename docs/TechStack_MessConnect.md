@@ -2,15 +2,15 @@
 
 **Version:** 1.0
 **Date:** September 15, 2026
-**Purpose:** This is the single source of truth for every technology used in building MessConnect. When using an AI coding assistant (Claude Code, Cursor, Copilot, etc.), paste or reference this document so the assistant does not substitute, guess, or mix in alternative technologies.
+**Purpose:** This is the single source of truth for every technology used in building MessConnect, ensuring consistent technology choices across all services.
 
 **Assumptions baked into this stack** (stated so nothing is ambiguous):
 - Primary launch market: India (hence India-first choices for payments/SMS).
 - Team size: small (1–5 engineers) at MVP stage — stack favors speed and one-language-everywhere (TypeScript) over maximum scalability.
 - Cross-platform mobile (one codebase for Android + iOS) rather than separate native apps.
-- Cloud provider: AWS (chosen for maturity, India region availability via Mumbai/Hyderabad, and broad documentation depth for AI tools).
+- Cloud provider: AWS (chosen for maturity, India region availability via Mumbai/Hyderabad, and broad documentation depth).
 
-If any of these assumptions are wrong for your situation (e.g., you want native iOS/Android, or a different cloud/payment region), say so and this document should be revised — don't let an AI assistant silently substitute a different choice mid-build.
+If any of these assumptions are wrong for your situation (e.g., you want native iOS/Android, or a different cloud/payment region), this document should be revised accordingly.
 
 ---
 
@@ -107,7 +107,7 @@ All client apps talk **only** to the NestJS REST API — no client ever talks di
 | Technology | Use in MessConnect |
 |---|---|
 | **Node.js (LTS)** | JavaScript runtime for the backend. |
-| **NestJS** | Backend framework — chosen over plain Express because its modular, decorator-based structure (controllers/services/modules) keeps a growing codebase organized and is easy for an AI assistant to extend predictably. |
+| **NestJS** | Backend framework — chosen over plain Express because its modular, decorator-based structure (controllers/services/modules) keeps a growing codebase organized and maintainable. |
 | **TypeScript** | Backend language — same language as both frontends, reducing context-switching and duplicated type definitions. |
 | **REST API** | API style for all client-server communication (not GraphQL) — chosen for simplicity, wide tooling support, and easier caching/CDN behavior for an MVP. |
 | **Prisma** | ORM for all PostgreSQL access — type-safe queries, migrations, and schema management. |
@@ -204,7 +204,7 @@ All client apps talk **only** to the NestJS REST API — no client ever talks di
 | **Terraform** | (Recommended once you move past a single-founder MVP) — defines all AWS infrastructure as code so environments (staging/production) are reproducible. |
 | **GitHub Actions** | CI/CD pipelines: run tests on every PR, build Docker images, deploy to ECS on merge to main. |
 
-> **MVP shortcut note:** If you want to launch faster and cheaper before committing to full AWS infrastructure, **Railway** or **Render** can host the same Dockerized NestJS + Postgres + Redis setup with far less DevOps overhead, and you migrate to AWS ECS/RDS once you have real usage. This is optional — pick one path and stick with it so an AI assistant isn't given two conflicting deployment targets.
+> **MVP shortcut note:** If you want to launch faster and cheaper before committing to full AWS infrastructure, **Railway** or **Render** can host the same Dockerized NestJS + Postgres + Redis setup with far less DevOps overhead, and you migrate to AWS ECS/RDS once you have real usage. This is optional — pick one path and stick with it to maintain a unified deployment target.
 
 ---
 
@@ -249,16 +249,5 @@ All client apps talk **only** to the NestJS REST API — no client ever talks di
 6. Sentry (error tracking)
 7. GitHub (repo + Actions CI/CD)
 
----
 
-## 18. Instructions for AI-Assisted Development
-
-When prompting an AI coding assistant to build any part of MessConnect:
-1. Always specify: **"Use NestJS + TypeScript + Prisma + PostgreSQL"** for backend work — never allow it to default to Express, Mongoose, or MongoDB.
-2. Always specify: **"Use React Native with Expo"** for mobile — never plain bare React Native or Flutter/native Swift/Kotlin.
-3. Always specify: **"Use Next.js App Router with TypeScript and Tailwind + shadcn/ui"** for any web dashboard work.
-4. Never let the assistant introduce GraphQL, Firebase Firestore, or a NoSQL database as a substitute for the Postgres/Prisma data layer — the schema is relational by design (orders, subscriptions, and payouts need strong relational integrity).
-5. For payments, only Razorpay integration should be generated — not Stripe, PayPal, or a custom payment flow.
-6. For maps, only Google Maps Platform APIs — not Mapbox or OpenStreetMap, to keep one consistent geocoding source of truth with PostGIS coordinates.
-7. If a new requirement seems to need a technology not listed here, stop and add it to this document first, rather than letting the AI assistant pick one ad hoc.
 

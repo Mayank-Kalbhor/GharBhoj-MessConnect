@@ -4,7 +4,7 @@
 **Date:** September 15, 2026
 **Companion file:** `schema.prisma` (the actual, working schema — validated with zero errors using Prisma's schema parser: 20 models, 12 enums, all relations resolved correctly)
 
-**How to use this pair of documents:** Give an AI coding assistant the `schema.prisma` file directly — tell it "this is the exact, final schema, do not modify field names, types, or relations without asking." Use this markdown file as the explanation layer: what each table is for, how tables connect, and — most importantly — the business rules that the schema *cannot* enforce by itself and that must be written into the application code correctly.
+**Document Overview:** Use `schema.prisma` as the canonical schema definition, and use this markdown document as the explanation layer: what each table is for, how tables connect, and — most importantly — the business rules that the schema *cannot* enforce by itself and that must be written into the application code correctly.
 
 ---
 
@@ -14,7 +14,7 @@
 2. **Every ID is a UUID string**, not an auto-incrementing integer — safer for a public-facing API (no sequential ID guessing) and simpler for distributed systems later.
 3. **Money fields use `Decimal(10,2)`**, never `Float` — floating point must never be used for currency, as it introduces rounding errors that compound over thousands of transactions.
 4. **Dates vs. Timestamps are distinguished deliberately**: fields like `Subscription.startDate` use `@db.Date` (calendar date only, no time), while `createdAt`/`updatedAt` use full `DateTime` — this avoids timezone-related off-by-one-day bugs in subscription/menu logic.
-5. **Geolocation uses plain `Float` lat/lng columns** in the core schema (not a PostGIS geography type) so that Prisma Client can read/write them with zero friction. A **separate, optional PostGIS supplement** (Section 5 below) adds fast radius-search capability without complicating the main schema — this is intentional so an AI assistant doesn't get confused about how to write basic queries.
+5. **Geolocation uses plain `Float` lat/lng columns** in the core schema (not a PostGIS geography type) so that Prisma Client can read/write them with zero friction. A **separate, optional PostGIS supplement** (Section 5 below) adds fast radius-search capability without complicating the main schema or basic ORM queries.
 
 ---
 
@@ -59,7 +59,7 @@
 
 ## 4. Business Rules the Schema Cannot Enforce (Must Be in Application Code)
 
-These are exactly the kind of rules an AI assistant will guess wrong if not told explicitly — write these into your NestJS service layer, not left to be inferred:
+Enforce these critical business rules explicitly within the NestJS service layer:
 
 1. **`Order.orderItems` should only be populated when `orderType = ONE_TIME`.** For `SUBSCRIPTION_MEAL` orders, the meal contents are implied by that date's `DailyMenu` — do not create `OrderItem` rows for subscription meals.
 2. **`DailyMenu.ordersPlaced` must be incremented inside the same database transaction as order creation**, and the order must be rejected if `ordersPlaced >= capacity` at that moment. Without a transaction, concurrent orders can race past the vendor's stated capacity.
@@ -78,7 +78,7 @@ These are exactly the kind of rules an AI assistant will guess wrong if not told
 
 ## 5. PostGIS Supplement (Geo Radius Search)
 
-The core schema keeps `Mess.latitude`/`Mess.longitude` as plain `Float` fields so Prisma Client works with zero friction for normal reads/writes. For **"mess near me" radius search**, add this as a **separate raw SQL migration** run after your initial `prisma migrate dev` — do not put this inside `schema.prisma` itself, since Prisma Client cannot natively query geography columns and an AI assistant may otherwise try to read/write them through normal Prisma calls and fail.
+The core schema keeps `Mess.latitude`/`Mess.longitude` as plain `Float` fields so Prisma Client works with zero friction for normal reads/writes. For **"mess near me" radius search**, add this as a **separate raw SQL migration** run after your initial `prisma migrate dev` — do not put this inside `schema.prisma` itself, since Prisma Client cannot natively query geography columns directly.
 
 ```sql
 -- Run once, after your first Prisma migration, as a custom SQL migration file

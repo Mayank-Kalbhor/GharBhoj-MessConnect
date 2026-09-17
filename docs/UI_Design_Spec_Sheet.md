@@ -2,7 +2,7 @@
 
 **Version:** 1.0
 **Date:** September 16, 2026
-**Purpose:** This is the exact visual system used across every MessConnect mockup (customer app, vendor dashboard, admin panel). Hand this to a designer or an AI assistant building the actual frontend so screens stay visually consistent instead of drifting screen by screen.
+**Purpose:** This is the exact visual system used across every MessConnect surface (customer app, vendor dashboard, admin panel) to ensure screens stay visually consistent across frontend implementations.
 
 ---
 

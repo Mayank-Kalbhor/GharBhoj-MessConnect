@@ -6,7 +6,7 @@
 **Style:** REST, JSON request/response bodies, per `TechStack_MessConnect.md` §5 (NestJS + class-validator).
 **Companion files:** `schema.prisma`, `DB_Schema_Reference.md`, `BusinessLogic_MessConnect.md`, `FolderStructure_MessConnect.md`, `.env.example`
 
-**How to use this with an AI coding assistant:** This is the single source of truth for every route, its inputs, and its outputs. Tell the assistant: "Implement exactly these endpoints, these exact field names and types, no additions or renames without updating this document first." Field names here match `schema.prisma` field names exactly — do not let the assistant "improve" a name (e.g. `phone` must never become `phoneNumber` on one side and stay `phone` on the other).
+**Usage:** This is the single source of truth for every route, its inputs, and its outputs. All implementations must use these exact endpoints, field names, and types without additions or renames unless this document is updated first. Field names here match `schema.prisma` field names exactly.
 
 ---
 
@@ -442,5 +442,5 @@ Use this to catch drift between this contract and the other MessConnect document
 - [ ] Every field name in every request/response body above matches a `schema.prisma` field name exactly (checked against the schema dump in this document's generation — re-diff after any schema change).
 - [ ] Every module prefix above (`/auth`, `/users`, `/mess`, `/vendor/mess`, `/orders`, `/subscriptions`, `/payments`, `/wallet`, `/admin`, `/vendor/payouts`, `/delivery`, `/reviews`, `/notifications`) has a matching NestJS module folder of the same name in `FolderStructure_MessConnect.md` §2 — no endpoint should live in a module folder with a different name than its route prefix.
 - [ ] Every external credential referenced implicitly above (`RAZORPAY_WEBHOOK_SECRET`, Firebase Admin credentials, etc.) has a corresponding entry in `.env.example` — no endpoint should be built against a key that isn't documented there.
-- [ ] Every money field is a string, never a number, on both request and response — re-check this whenever a new endpoint is added, since it's the easiest rule for an AI assistant to silently drop.
+- [ ] Every money field is a string, never a number, on both request and response — re-check this whenever a new endpoint is added.
 - [ ] Every write endpoint that touches `Subscription`, `Order`, or `DailyMenu` state cites which `BusinessLogic_MessConnect.md` rule it implements (as done above) — if a new endpoint doesn't cite one, check whether a business-logic rule is missing and needs to be written first, rather than improvised inline.

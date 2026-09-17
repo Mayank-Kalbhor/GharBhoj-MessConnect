@@ -2,10 +2,10 @@
 
 **Version:** 1.0
 **Date:** September 15, 2026
-**Purpose:** Defines exactly where every file lives. Paste the relevant section above any "build/add X" prompt to an AI coding assistant so it places new code in the existing structure instead of restructuring the project differently each session.
+**Purpose:** Defines exactly where every file lives in the repository structure.
 **Companion files:** `TechStack_MessConnect.md` (§16 named this a Turborepo monorepo — this document is the detailed version of that), `API_Contract_MessConnect.md`, `schema.prisma`
 
-**Rule for AI assistants:** Never create a new top-level folder, never rename an existing folder, and never move a module's files to a different module without being explicitly asked. If a new feature doesn't obviously fit an existing folder below, stop and ask rather than guessing a location.
+**Architecture Rule:** Never create a new top-level folder, never rename an existing folder, and never move a module's files to a different module without explicit architecture review. If a new feature doesn't obviously fit an existing folder below, determine the appropriate location before adding code.
 
 ---
 
@@ -33,7 +33,7 @@ messconnect/
 └── README.md
 ```
 
-**Why `apps/` + `packages/` (Turborepo convention):** `apps/` holds deployable things; `packages/` holds shared code nothing deploys on its own. An AI assistant should never put shared types inside `apps/api/src` and import them cross-app with a relative `../../` path — always through `packages/shared-types`.
+**Why `apps/` + `packages/` (Turborepo convention):** `apps/` holds deployable things; `packages/` holds shared code nothing deploys on its own. Shared types must never live inside `apps/api/src` or be imported cross-app with a relative `../../` path — always import through `packages/shared-types`.
 
 ---
 
@@ -86,7 +86,7 @@ apps/api/
 └── package.json
 ```
 
-**Each folder under `modules/` follows the same internal shape** (standard NestJS convention — an AI assistant should replicate this exact shape for every new module, not invent a variant):
+**Each folder under `modules/` follows the same internal shape** (standard NestJS convention — all new modules must replicate this exact shape):
 ```
 modules/<name>/
 ├── <name>.module.ts
@@ -197,7 +197,7 @@ packages/shared-constants/
 │   ├── error-codes.ts         # Must be the same values as apps/api/src/common/error-codes.ts (re-exported, not duplicated by hand)
 │   └── config.ts              # Non-secret shared config (default pagination limit, skip-credit cap default %, etc.)
 ```
-**Rule:** whenever a Prisma model or enum changes, `packages/shared-types` is updated in the same PR — this is what stops the mobile app, web dashboard, and backend from drifting when built in separate AI sessions, per the original ask for this document.
+**Rule:** whenever a Prisma model or enum changes, `packages/shared-types` is updated in the same PR — this prevents contract drift between the mobile app, web dashboard, and backend.
 
 ---
 

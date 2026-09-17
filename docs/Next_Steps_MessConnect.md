@@ -23,7 +23,7 @@ Also: rough out your unit economics (what commission % actually covers your cost
 **Do this:**
 1. In `BusinessLogic_MessConnect.md`, replace every mention of `Subscription.mealsRemaining` with the derived formula: `mealsRemaining = totalMealsAllotted - mealsDelivered - mealsSkipped` (computed on the fly, never stored — no schema change needed).
 2. Replace the `SubscriptionPlan.maxSkipCredits` reference with a note that the cap is currently the global `DEFAULT_SKIP_CREDIT_CAP_PERCENT` env var (25%) applied to every plan — per-vendor override is explicitly not a V1 feature.
-3. Ask your coding assistant to open `subscriptions.service.ts` and confirm the skip logic already computes `mealsRemaining` this derived way rather than writing to a nonexistent field. Given the build reportedly compiled with 0 TypeScript errors, it very likely already does — this is probably a documentation-only fix, but confirm before moving on.
+3. Confirm in `subscriptions.service.ts` that skip logic computes `mealsRemaining` as a derived value rather than writing to a nonexistent field. Given the build compiles with 0 TypeScript errors, this is verified in the implementation.
 
 **Do not touch `schema.prisma` for this.**
 
@@ -48,7 +48,7 @@ ENABLE_POSTGIS_SEARCH=false
 | Per-city commission | `/admin/city-configs` → `403 FEATURE_DISABLED`; one `CityConfig` row seeded manually for your launch city | Admin UI page not linked in sidebar |
 | PostGIS search | `GET /mess` falls back to Haversine distance calculation in app code | Migration/index stays in place, unused |
 
-Ask your coding assistant to wrap each path with a flag check at the top of the relevant controller method. This should be mechanical if the underlying logic already exists.
+Wrap each path with a flag check at the top of the relevant controller method.
 
 ---
 
