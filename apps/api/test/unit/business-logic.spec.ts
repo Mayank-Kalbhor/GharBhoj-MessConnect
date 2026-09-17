@@ -143,29 +143,29 @@ describe('Business Logic Specification Verification (Rules 1 - 11)', () => {
 
   describe('Rule 9: Payout & Commission Calculation', () => {
     it('should reproduce the exact worked example from BusinessLogic_MessConnect.md', () => {
-      // Worked example: ₹1,18,400 gross in a week, 12% commission
-      const grossAmount = new Decimal('118400.00');
-      const commissionPercent = new Decimal('12.00');
+      // Worked example: A mess in Indore (launch city, seeded at 14% commission) does ₹1,00,000 gross in a week
+      const grossAmount = new Decimal('100000.00');
+      const commissionPercent = new Decimal('14.00');
 
       const commissionAmount = grossAmount.mul(commissionPercent.div(100)).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
       const netAmount = grossAmount.minus(commissionAmount).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 
-      expect(commissionAmount.toFixed(2)).toBe('14208.00');
-      expect(netAmount.toFixed(2)).toBe('104192.00');
+      expect(commissionAmount.toFixed(2)).toBe('14000.00');
+      expect(netAmount.toFixed(2)).toBe('86000.00');
     });
 
     it('should net out refunds issued within the period', () => {
       const orderPayments = new Decimal('10000.00');
       const refundsInPeriod = new Decimal('1500.00');
       const grossAmount = orderPayments.minus(refundsInPeriod); // 8500.00
-      const commissionPercent = new Decimal('10.00');
+      const commissionPercent = new Decimal('14.00');
 
       const commissionAmount = grossAmount.mul(commissionPercent.div(100)).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
       const netAmount = grossAmount.minus(commissionAmount).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 
       expect(grossAmount.toFixed(2)).toBe('8500.00');
-      expect(commissionAmount.toFixed(2)).toBe('850.00');
-      expect(netAmount.toFixed(2)).toBe('7650.00');
+      expect(commissionAmount.toFixed(2)).toBe('1190.00');
+      expect(netAmount.toFixed(2)).toBe('7310.00');
     });
   });
 });

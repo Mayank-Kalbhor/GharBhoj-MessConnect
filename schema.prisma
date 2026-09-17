@@ -1,0 +1,484 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  CUSTOMER
+  VENDOR
+  DELIVERY_PARTNER
+  ADMIN
+}
+
+enum MessStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+  COMPLETED
+}
+
+enum OrderType {
+  ONE_TIME
+  SUBSCRIPTION_MEAL
+}
+
+enum OrderStatus {
+  PLACED
+  ACCEPTED
+  PREPARING
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  SKIPPED
+}
+
+enum PaymentType {
+  ORDER_PAYMENT
+  SUBSCRIPTION_PAYMENT
+  REFUND
+  WALLET_TOPUP
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum DeliveryStatus {
+  ASSIGNED
+  PICKED_UP
+  DELIVERED
+  FAILED
+}
+
+enum WalletTxnType {
+  CREDIT
+  DEBIT
+}
+
+enum NotificationType {
+  ORDER_UPDATE
+  SUBSCRIPTION_REMINDER
+  PROMOTIONAL
+  SYSTEM
+}
+
+// ==================== USER & AUTH ====================
+
+model User {
+  id                String   @id @default(uuid())
+  role              UserRole
+  fullName          String
+  phone             String   @unique
+  email             String?  @unique
+  firebaseUid       String   @unique
+  isStudentVerified Boolean  @default(false)
+  studentIdDocUrl   String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  addresses       Address[]
+  mess            Mess?            @relation("MessOwner")
+  deliveryProfile DeliveryPartner?
+  orders          Order[]
+  subscriptions   Subscription[]
+  reviews         Review[]
+  payments        Payment[]
+  wallet          Wallet?
+  notifications   Notification[]
+
+  @@index([role])
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  userId      String
+  label       String
+  addressLine String
+  city        String
+  state       String
+  pincode     String
+  latitude    Float
+  longitude   Float
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@index([userId])
+}
+
+// ==================== MESS (VENDOR) ====================
+
+model Mess {
+  id                 String     @id @default(uuid())
+  ownerId            String     @unique
+  name               String
+  description        String?
+  fssaiLicenseNumber String
+  licenseDocUrl       String?
+  addressLine        String
+  city               String
+  latitude           Float
+  longitude          Float
+  isVeg              Boolean    @default(false)
+  cuisineTypes       String[]
+  status             MessStatus @default(PENDING_APPROVAL)
+  avgRating          Float      @default(0)
+  hygieneRating      Float      @default(0)
+  consistencyScore   Float      @default(0)
+  bankAccountNumber  String?
+  bankIfscCode       String?
+  bankAccountHolder  String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  owner             User               @relation("MessOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  menuItems         MenuItem[]
+  dailyMenus        DailyMenu[]
+  subscriptionPlans SubscriptionPlan[]
+  subscriptions     Subscription[]
+  orders            Order[]
+  reviews           Review[]
+  payouts           Payout[]
+
+  @@index([city])
+  @@index([status])
+}
+
+model MenuItem {
+  id          String   @id @default(uuid())
+  messId      String
+  name        String
+  description String?
+  mealType    MealType
+  isVeg       Boolean  @default(true)
+  price       Decimal  @db.Decimal(10, 2)
+  imageUrl    String?
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mess           Mess            @relation(fields: [messId], references: [id], onDelete: Cascade)
+  dailyMenuItems DailyMenuItem[]
+  orderItems     OrderItem[]
+
+  @@index([messId, mealType])
+}
+
+model DailyMenu {
+  id           String   @id @default(uuid())
+  messId       String
+  date         DateTime @db.Date
+  mealType     MealType
+  capacity     Int
+  ordersPlaced Int      @default(0)
+  cutoffTime   DateTime
+  createdAt    DateTime @default(now())
+
+  mess  Mess            @relation(fields: [messId], references: [id], onDelete: Cascade)
+  items DailyMenuItem[]
+
+  @@unique([messId, date, mealType])
+  @@index([date])
+}
+
+model DailyMenuItem {
+  id          String @id @default(uuid())
+  dailyMenuId String
+  menuItemId  String
+
+  dailyMenu DailyMenu @relation(fields: [dailyMenuId], references: [id], onDelete: Cascade)
+  menuItem  MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@unique([dailyMenuId, menuItemId])
+}
+
+// ==================== SUBSCRIPTIONS ====================
+
+model SubscriptionPlan {
+  id               String     @id @default(uuid())
+  messId           String
+  name             String
+  mealTypes        MealType[]
+  durationDays     Int
+  price            Decimal    @db.Decimal(10, 2)
+  refundPolicyText String
+  isActive         Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+
+  mess          Mess           @relation(fields: [messId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
+
+  @@index([messId])
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  userId               String
+  messId               String
+  planId               String
+  startDate            DateTime           @db.Date
+  endDate              DateTime           @db.Date
+  status               SubscriptionStatus @default(ACTIVE)
+  mealTypesIncluded    MealType[]
+  totalMealsAllotted   Int
+  mealsDelivered       Int                @default(0)
+  mealsSkipped         Int                @default(0)
+  skipCreditsRemaining Int                @default(0)
+  balanceAmount        Decimal            @db.Decimal(10, 2)
+  autoRenew            Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mess     Mess                @relation(fields: [messId], references: [id], onDelete: Cascade)
+  plan     SubscriptionPlan    @relation(fields: [planId], references: [id])
+  pauses   SubscriptionPause[]
+  orders   Order[]
+  reviews  Review[]
+  payments Payment[]
+
+  @@index([userId, status])
+  @@index([messId])
+}
+
+model SubscriptionPause {
+  id             String   @id @default(uuid())
+  subscriptionId String
+  pauseStart     DateTime @db.Date
+  pauseEnd       DateTime @db.Date
+  reason         String?
+  createdAt      DateTime @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+}
+
+// ==================== ORDERS ====================
+
+model Order {
+  id             String      @id @default(uuid())
+  orderType      OrderType
+  userId         String
+  messId         String
+  subscriptionId String?
+  addressId      String
+  mealType       MealType
+  scheduledDate  DateTime    @db.Date
+  status         OrderStatus @default(PLACED)
+  amount         Decimal     @db.Decimal(10, 2)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  user         User                 @relation(fields: [userId], references: [id])
+  mess         Mess                 @relation(fields: [messId], references: [id])
+  subscription Subscription?        @relation(fields: [subscriptionId], references: [id])
+  address      Address              @relation(fields: [addressId], references: [id])
+  orderItems   OrderItem[]
+  payment      Payment?
+  delivery     DeliveryAssignment?
+  review       Review?
+
+  @@index([userId])
+  @@index([messId, scheduledDate])
+  @@index([subscriptionId])
+}
+
+model OrderItem {
+  id         String  @id @default(uuid())
+  orderId    String
+  menuItemId String
+  quantity   Int     @default(1)
+  priceEach  Decimal @db.Decimal(10, 2)
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId])
+}
+
+// ==================== REVIEWS ====================
+
+model Review {
+  id                   String   @id @default(uuid())
+  userId               String
+  messId               String
+  orderId              String?  @unique
+  subscriptionId       String?
+  tasteRating          Int
+  hygieneRating        Int
+  quantityRating       Int
+  punctualityRating    Int
+  overallRating        Float
+  comment              String?
+  photoUrls            String[]
+  isVerifiedSubscriber Boolean  @default(false)
+  createdAt            DateTime @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mess         Mess          @relation(fields: [messId], references: [id], onDelete: Cascade)
+  order        Order?        @relation(fields: [orderId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@index([messId])
+}
+
+// ==================== PAYMENTS & WALLET ====================
+
+model Payment {
+  id                String        @id @default(uuid())
+  userId            String
+  orderId           String?       @unique
+  subscriptionId    String?
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("INR")
+  type              PaymentType
+  status            PaymentStatus @default(PENDING)
+  razorpayPaymentId String?
+  razorpayOrderId   String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id])
+  order        Order?        @relation(fields: [orderId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  balance   Decimal  @default(0) @db.Decimal(10, 2)
+  currency  String   @default("INR")
+  updatedAt DateTime @updatedAt
+
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+}
+
+model WalletTransaction {
+  id          String        @id @default(uuid())
+  walletId    String
+  amount      Decimal       @db.Decimal(10, 2)
+  type        WalletTxnType
+  reason      String
+  referenceId String?
+  createdAt   DateTime      @default(now())
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+}
+
+// ==================== PAYOUTS ====================
+
+model Payout {
+  id               String       @id @default(uuid())
+  messId           String
+  periodStart      DateTime     @db.Date
+  periodEnd        DateTime     @db.Date
+  grossAmount      Decimal      @db.Decimal(10, 2)
+  commissionAmount Decimal      @db.Decimal(10, 2)
+  netAmount        Decimal      @db.Decimal(10, 2)
+  status           PayoutStatus @default(PENDING)
+  razorpayPayoutId String?
+  processedAt      DateTime?
+  createdAt        DateTime     @default(now())
+
+  mess Mess @relation(fields: [messId], references: [id], onDelete: Cascade)
+
+  @@index([messId])
+}
+
+// ==================== DELIVERY ====================
+
+model DeliveryPartner {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  vehicleType      String
+  isAvailable      Boolean  @default(true)
+  currentLatitude  Float?
+  currentLongitude Float?
+  rating           Float    @default(0)
+  createdAt        DateTime @default(now())
+
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignments DeliveryAssignment[]
+}
+
+model DeliveryAssignment {
+  id                 String         @id @default(uuid())
+  orderId            String         @unique
+  deliveryPartnerId  String
+  status             DeliveryStatus @default(ASSIGNED)
+  otp                String
+  assignedAt         DateTime       @default(now())
+  pickedUpAt         DateTime?
+  deliveredAt        DateTime?
+
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  deliveryPartner DeliveryPartner @relation(fields: [deliveryPartnerId], references: [id])
+
+  @@index([deliveryPartnerId])
+}
+
+// ==================== PLATFORM CONFIG ====================
+
+model CityConfig {
+  id                   String   @id @default(uuid())
+  cityName             String   @unique
+  commissionPercentage Decimal  @db.Decimal(5, 2)
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  title     String
+  body      String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}

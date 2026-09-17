@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "109876543210",
+    "project_id": "gharbhoj-indore",
+    "storage_bucket": "gharbhoj-indore.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:109876543210:android:9876543210abcdef",
+        "android_client_info": {
+          "package_name": "com.gharbhoj.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_GHARBHOJ_INDORE_DEV_KEY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

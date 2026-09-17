@@ -13,6 +13,11 @@ export class SubscriptionRenewalProcessor {
   ) {}
 
   async processRenewals(): Promise<{ renewedCount: number }> {
+    if (process.env.ENABLE_AUTO_RENEW !== 'true') {
+      this.logger.log('Subscription auto-renewal is disabled in V1 via ENABLE_AUTO_RENEW=false flag.');
+      return { renewedCount: 0 };
+    }
+
     const today = new Date();
     this.logger.log(`Running daily subscription renewal processor for date: ${today.toISOString()}`);
 

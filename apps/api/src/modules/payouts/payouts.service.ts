@@ -32,9 +32,9 @@ export class PayoutsService {
 
     return payouts.map(p => ({
       ...p,
-      grossAmount: p.grossAmount.toString(),
-      commissionAmount: p.commissionAmount.toString(),
-      netAmount: p.netAmount.toString(),
+      grossAmount: new Decimal(p.grossAmount.toString()).toFixed(2),
+      commissionAmount: new Decimal(p.commissionAmount.toString()).toFixed(2),
+      netAmount: new Decimal(p.netAmount.toString()).toFixed(2),
       periodStart: p.periodStart.toISOString().split('T')[0],
       periodEnd: p.periodEnd.toISOString().split('T')[0]
     }));
@@ -56,13 +56,17 @@ export class PayoutsService {
     const results = [];
 
     for (const mess of messes) {
-      // Find CityConfig for commission
-      const cityConfig = await this.prisma.cityConfig.findUnique({
-        where: { cityName: mess.city }
+      // Find active CityConfig for commission
+      const cityConfig = await this.prisma.cityConfig.findFirst({
+        where: {
+          cityName: { equals: mess.city, mode: 'insensitive' },
+          isActive: true
+        }
       });
+      const defaultCommission = process.env.DEFAULT_COMMISSION_PERCENTAGE || '14.00';
       const commissionPercent = cityConfig
         ? new Decimal(cityConfig.commissionPercentage.toString())
-        : new Decimal(10.0); // default 10%
+        : new Decimal(defaultCommission);
 
       // Business Logic Rule 9:
       // grossAmount = SUM(Payment.amount) for completed Orders/Subscriptions in the period
@@ -118,9 +122,9 @@ export class PayoutsService {
         results.push({
           payoutId: payout.id,
           messId: mess.id,
-          grossAmount: payout.grossAmount.toString(),
-          commissionAmount: payout.commissionAmount.toString(),
-          netAmount: payout.netAmount.toString(),
+          grossAmount: new Decimal(payout.grossAmount.toString()).toFixed(2),
+          commissionAmount: new Decimal(payout.commissionAmount.toString()).toFixed(2),
+          netAmount: new Decimal(payout.netAmount.toString()).toFixed(2),
           status: payout.status
         });
       }

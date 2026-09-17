@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "GharBhoj",
+    "slug": "gharbhoj-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "gharbhoj",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FFFBF3"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.gharbhoj.customer"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0F6E56"
+      },
+      "package": "com.gharbhoj.customer",
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow GharBhoj to use your location to discover messes and calculate delivery distances near you."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#0F6E56"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

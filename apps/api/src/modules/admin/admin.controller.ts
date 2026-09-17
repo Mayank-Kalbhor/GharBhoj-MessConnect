@@ -6,9 +6,11 @@ import {
   Body,
   Param,
   Query,
-  UseGuards
+  UseGuards,
+  ForbiddenException
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ErrorCode } from '../../common/error-codes';
 import { AdminService } from './admin.service';
 import {
   UpdateMessStatusDto,
@@ -70,12 +72,24 @@ export class AdminController {
   @Get('city-configs')
   @ApiOperation({ summary: 'List platform city configs' })
   async getCityConfigs() {
+    if (process.env.ENABLE_CITY_CONFIG_UI !== 'true') {
+      throw new ForbiddenException({
+        code: ErrorCode.FEATURE_DISABLED,
+        message: 'City config management is disabled in V1.'
+      });
+    }
     return this.adminService.getCityConfigs();
   }
 
   @Post('city-configs')
   @ApiOperation({ summary: 'Create new city config with commission rate' })
   async createCityConfig(@Body() dto: CreateCityConfigDto) {
+    if (process.env.ENABLE_CITY_CONFIG_UI !== 'true') {
+      throw new ForbiddenException({
+        code: ErrorCode.FEATURE_DISABLED,
+        message: 'City config management is disabled in V1.'
+      });
+    }
     return this.adminService.createCityConfig(dto);
   }
 
@@ -85,6 +99,12 @@ export class AdminController {
     @Param('id') id: string,
     @Body() dto: UpdateCityConfigDto
   ) {
+    if (process.env.ENABLE_CITY_CONFIG_UI !== 'true') {
+      throw new ForbiddenException({
+        code: ErrorCode.FEATURE_DISABLED,
+        message: 'City config management is disabled in V1.'
+      });
+    }
     return this.adminService.updateCityConfig(id, dto);
   }
 

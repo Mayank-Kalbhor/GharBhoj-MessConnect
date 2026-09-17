@@ -7,6 +7,7 @@ import {
   IsArray,
   IsEnum,
   IsDateString,
+  IsIn,
   Min
 } from 'class-validator';
 import { MealType } from '@messconnect/shared-types';
@@ -34,7 +35,8 @@ export class CreateMessDto {
 
   @IsNotEmpty()
   @IsString()
-  city: string;
+  @IsIn(['Indore'], { message: 'In V1, mess onboarding is restricted exclusively to Indore.' })
+  city: string = 'Indore';
 
   @IsNumber()
   latitude: number;
@@ -86,6 +88,7 @@ export class UpdateMessDto {
 
   @IsOptional()
   @IsString()
+  @IsIn(['Indore'], { message: 'In V1, mess city can only be Indore.' })
   city?: string;
 
   @IsOptional()

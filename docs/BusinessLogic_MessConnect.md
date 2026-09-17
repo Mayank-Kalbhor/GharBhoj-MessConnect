@@ -16,7 +16,7 @@ These are the non-negotiable truths of the system. Any code change that would vi
 
 | # | Invariant |
 |---|---|
-| I1 | `Subscription.totalMealsAllotted = Subscription.mealsDelivered + Subscription.mealsSkipped + Subscription.mealsRemaining` — always, for every subscription, at every point in time. |
+| I1 | `Subscription.totalMealsAllotted = Subscription.mealsDelivered + Subscription.mealsSkipped + mealsRemaining` (where `mealsRemaining = totalMealsAllotted - mealsDelivered - mealsSkipped` is derived on-the-fly, never stored in DB) — always, for every subscription, at every point in time. |
 | I2 | `DailyMenu.ordersPlaced` never exceeds `DailyMenu.capacity`. |
 | I3 | No `Order` of `orderType = SUBSCRIPTION_MEAL` is created for a date before that subscription's `startDate` or after its (possibly pause-extended) `endDate`. |
 | I4 | `Payment` rows are append-only. A refund is a *new* `Payment` row with `type = REFUND`, never an edit to the original payment. |
@@ -39,7 +39,7 @@ Where `mealsPerDay` = count of meal types selected (e.g., lunch only = 1, lunch+
 **On creation, set:**
 - `mealsDelivered = 0`
 - `mealsSkipped = 0`
-- `mealsRemaining = totalMealsAllotted`
+- `mealsRemaining` (derived on-the-fly: `totalMealsAllotted - mealsDelivered - mealsSkipped`)
 - `skipCreditsRemaining = 0`
 - `endDate = startDate + numberOfDaysInPlan` (calendar-date arithmetic, not 24h-increments — see Rule 8 on timezone handling)
 
@@ -55,11 +55,11 @@ Where `mealsPerDay` = count of meal types selected (e.g., lunch only = 1, lunch+
 ```
 Order.status = SKIPPED
 Subscription.mealsSkipped += 1
-Subscription.mealsRemaining -= 1        (the meal is "used" — it becomes a banked credit, not extra free meals)
+(derived mealsRemaining automatically decreases — the meal is "used" and becomes a banked credit)
 Subscription.skipCreditsRemaining += 1   (capped — see below)
 ```
 
-**Skip credit cap:** Read `SubscriptionPlan.maxSkipCredits` (vendor-configured; if unset, default cap = `totalMealsAllotted × 0.25`, rounded down). If `skipCreditsRemaining` is already at the cap, the skip is still allowed (the customer just won't be cooked for that day) but **do not increment `skipCreditsRemaining` further** — the meal is forfeited, not banked. Surface this clearly to the user before they confirm the skip ("You've reached your skip-credit limit; this skip will not be redeemable").
+**Skip credit cap:** The skip credit cap is determined by the global `DEFAULT_SKIP_CREDIT_CAP_PERCENT` environment variable (default: 25% of `totalMealsAllotted`, rounded down) applied across all plans in V1 (per-vendor overrides are deferred post-V1). If `skipCreditsRemaining` is already at the cap, the skip is still allowed (the customer just won't be cooked for that day) but **do not increment `skipCreditsRemaining` further** — the meal is forfeited, not banked. Surface this clearly to the user before they confirm the skip ("You've reached your skip-credit limit; this skip will not be redeemable").
 
 **Redeeming a skip credit:** A skip credit is consumed by scheduling an extra meal delivery on a day outside the original plan calendar (or by extending `endDate` by one day, vendor's choice, stored in `SubscriptionPlan.refundPolicyText`). Redeeming decrements `skipCreditsRemaining` by 1 and creates a new `Order` (`orderType = SUBSCRIPTION_MEAL`) for the chosen date, subject to that date's `DailyMenu.capacity` and `cutoffTime` like any other order.
 
@@ -80,7 +80,7 @@ Subscription.endDate = Subscription.endDate + pauseDurationDays
 ```
 Also insert a `SubscriptionPause` row logging `pauseStartDate`, `pauseEndDate`, and `pauseDurationDays`.
 
-**Worked example:** A 30-day plan starting Sep 1 (endDate = Oct 1). Customer pauses Sep 10–Sep 16 (7 days inclusive). New `endDate = Oct 1 + 7 = Oct 8`. No `Order` rows of type `SUBSCRIPTION_MEAL` are generated for Sep 10–16; `mealsRemaining` is untouched during the pause.
+**Worked example:** A 30-day plan starting Sep 1 (endDate = Oct 1). Customer pauses Sep 10–Sep 16 (7 days inclusive). New `endDate = Oct 1 + 7 = Oct 8`. No `Order` rows of type `SUBSCRIPTION_MEAL` are generated for Sep 10–16; derived `mealsRemaining` is untouched during the pause.
 
 **Edge cases:**
 - **Multiple pauses in one subscription:** Each pause is its own `SubscriptionPause` row; `endDate` accumulates the sum of all pause durations. Do not overwrite previous pause records.
@@ -106,7 +106,7 @@ netRefund = round(grossRefund - cancellationDeduction, 2)
 **On cancellation:**
 ```
 Subscription.status = CANCELLED
-Subscription.mealsRemaining = 0
+(derived mealsRemaining becomes 0 as subscription is cancelled)
 Payment row created: type = REFUND, amount = netRefund, linked to original Subscription
 ```
 Skip credits already banked (`skipCreditsRemaining`) are **forfeited on cancellation** unless the vendor's policy explicitly states otherwise — state this plainly to the user before they confirm cancellation.
@@ -189,7 +189,7 @@ commissionAmount = round( grossAmount × (CityConfig.commissionPercentage / 100)
 netAmount = grossAmount - commissionAmount
 ```
 
-**Worked example:** A mess in a city with 12% commission does ₹1,18,400 gross in a week. `commissionAmount = 1,18,400 × 0.12 = 14,208.00`. `netAmount = 1,04,192.00`. One `Payout` row is created with these three figures plus the period's date range and Razorpay payout reference.
+**Worked example:** A mess in Indore (launch city, seeded at 14% commission) does ₹1,00,000 gross in a week. `commissionAmount = 1,00,000 × 0.14 = 14,000.00`. `netAmount = 86,000.00`. One `Payout` row is created with these three figures plus the period's date range and Razorpay payout reference.
 
 **Edge case — refunds issued within the same settlement period:** Refunds (`Payment.type = REFUND`) reduce `grossAmount` for that mess in the period they were issued in (not the period the original order was placed in), so a payout period's `grossAmount` should net out any refunds that fell inside it.
 

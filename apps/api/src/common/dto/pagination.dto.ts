@@ -8,14 +8,14 @@ export class PaginationQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  page: number = 1;
+  page?: number = 1;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(CONFIG_DEFAULTS.MAX_PAGE_SIZE)
-  limit: number = CONFIG_DEFAULTS.DEFAULT_PAGE_SIZE;
+  limit?: number = CONFIG_DEFAULTS.DEFAULT_PAGE_SIZE;
 }
 
 export function buildPaginatedResponse<T>(

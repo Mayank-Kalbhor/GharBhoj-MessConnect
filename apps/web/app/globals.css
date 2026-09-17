@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-screen: #FFFBF3;
+  --bg-card: #FFFFFF;
+  --border-default: #EDE7D8;
+  --border-muted: #D8D2C4;
+  --text-primary: #22302B;
+  --text-secondary: #6B7770;
+  --brand-primary: #0F6E56;
+  --brand-primary-tint: rgba(15, 110, 86, 0.14);
+  --brand-accent: #BA7517;
+  --brand-accent-bg: #FAEEDA;
+  --brand-accent-text: #854F0B;
+  --success-bg: #EAF3DE;
+  --success-text: #3B6D11;
+  --danger-bg: #FCEBEB;
+  --danger-text: #791F1F;
+  --danger-border: #E5B4A2;
+  --sidebar-dark: #22302B;
+}
+
+/* Strict Flat Design: Zero drop shadows, zero glow */
+*, *::before, *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+body {
+  background-color: var(--bg-screen);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Font weight restriction: only 400 and 500 allowed */
+h1, h2, h3, h4, h5, h6, b, strong {
+  font-weight: 500 !important;
+}
+
+/* Custom flat scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-screen);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-muted);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}

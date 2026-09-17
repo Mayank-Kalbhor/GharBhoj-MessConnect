@@ -168,7 +168,7 @@ export class OrdersService {
         amount: order.amount.toString(),
         razorpayOrderId: rzpOrder.id
       };
-    });
+    }, { maxWait: 30000, timeout: 60000 });
   }
 
   async getOrderById(userId: string, role: UserRole, orderId: string) {

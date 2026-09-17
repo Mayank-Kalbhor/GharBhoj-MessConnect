@@ -116,7 +116,7 @@ export class SubscriptionsService {
           mealsSkipped: 0,
           skipCreditsRemaining: 0,
           balanceAmount: new Prisma.Decimal(netPayable.toFixed(2)),
-          autoRenew: dto.autoRenew || false
+          autoRenew: process.env.ENABLE_AUTO_RENEW === 'true' ? (dto.autoRenew || false) : false
         }
       });
 
@@ -254,7 +254,8 @@ export class SubscriptionsService {
       });
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(
+      async (tx) => {
       // Find or create the scheduled order for this day
       let order = await tx.order.findFirst({
         where: {
@@ -288,8 +289,10 @@ export class SubscriptionsService {
         });
       }
 
-      // Rule 3: Skip credit capping formula (default 25% of totalMealsAllotted)
-      const maxSkipCredits = Math.floor(sub.totalMealsAllotted * 0.25);
+      // Rule 3: Skip credit capping formula (reads from DEFAULT_SKIP_CREDIT_CAP_PERCENT env var, default 25%)
+      const envCap = process.env.DEFAULT_SKIP_CREDIT_CAP_PERCENT ? parseFloat(process.env.DEFAULT_SKIP_CREDIT_CAP_PERCENT) : 25;
+      const capPercent = (isNaN(envCap) || envCap < 0) ? 0.25 : envCap / 100;
+      const maxSkipCredits = Math.floor(sub.totalMealsAllotted * capPercent);
       const creditBanked = sub.skipCreditsRemaining < maxSkipCredits;
 
       const updatedSub = await tx.subscription.update({
@@ -306,7 +309,7 @@ export class SubscriptionsService {
         skipCreditsRemaining: updatedSub.skipCreditsRemaining,
         creditBanked
       };
-    });
+    }, { maxWait: 30000, timeout: 60000 });
   }
 
   async redeemSkipCredit(customerId: string, subscriptionId: string, dto: RedeemSkipCreditDto) {

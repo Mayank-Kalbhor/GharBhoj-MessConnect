@@ -17,53 +17,49 @@ export class MessService {
     const limit = query.limit || 20;
     const offset = (page - 1) * limit;
 
-    // Use parameterized PostGIS query if location provided
+    // Strict PostGIS Spatial Discovery: Parameterized PostGIS query when location is provided
     if (query.lat !== undefined && query.lng !== undefined) {
       const radiusMeters = query.radiusMeters || 5000;
       const lat = query.lat;
       const lng = query.lng;
 
-      try {
-        const rawResults: any[] = await this.prisma.$queryRaw`
-          SELECT id, name, "avgRating", "consistencyScore", "isVeg", "cuisineTypes", city, status,
-            ROUND(ST_Distance(
-              ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
-              ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
-            )::numeric, 0)::int AS "distanceMeters"
-          FROM "Mess"
-          WHERE status = 'ACTIVE'
-            AND ST_DWithin(
-              ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
-              ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography,
-              ${radiusMeters}
-            )
-            ${query.city ? Prisma.sql`AND LOWER(city) = LOWER(${query.city})` : Prisma.empty}
-            ${query.isVeg !== undefined ? Prisma.sql`AND "isVeg" = ${query.isVeg}` : Prisma.empty}
-            ${query.minRating !== undefined ? Prisma.sql`AND "avgRating" >= ${query.minRating}` : Prisma.empty}
-          ORDER BY
-            ${query.sortBy === 'rating' ? Prisma.sql`"avgRating" DESC` : Prisma.sql`"distanceMeters" ASC`}
-          LIMIT ${limit} OFFSET ${offset};
-        `;
+      const rawResults: any[] = await this.prisma.$queryRaw`
+        SELECT id, name, "avgRating", "consistencyScore", "isVeg", "cuisineTypes", city, status,
+          ROUND(ST_Distance(
+            ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
+            ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
+          )::numeric, 0)::int AS "distanceMeters"
+        FROM "Mess"
+        WHERE status = 'ACTIVE'
+          AND ST_DWithin(
+            ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
+            ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography,
+            ${radiusMeters}
+          )
+          ${query.city ? Prisma.sql`AND LOWER(city) = LOWER(${query.city})` : Prisma.empty}
+          ${query.isVeg !== undefined ? Prisma.sql`AND "isVeg" = ${query.isVeg}` : Prisma.empty}
+          ${query.minRating !== undefined ? Prisma.sql`AND "avgRating" >= ${query.minRating}` : Prisma.empty}
+        ORDER BY
+          ${query.sortBy === 'rating' ? Prisma.sql`"avgRating" DESC` : Prisma.sql`"distanceMeters" ASC`}
+        LIMIT ${limit} OFFSET ${offset};
+      `;
 
-        const countResult: any[] = await this.prisma.$queryRaw`
-          SELECT COUNT(*)::int AS count
-          FROM "Mess"
-          WHERE status = 'ACTIVE'
-            AND ST_DWithin(
-              ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
-              ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography,
-              ${radiusMeters}
-            )
-            ${query.city ? Prisma.sql`AND LOWER(city) = LOWER(${query.city})` : Prisma.empty}
-            ${query.isVeg !== undefined ? Prisma.sql`AND "isVeg" = ${query.isVeg}` : Prisma.empty}
-            ${query.minRating !== undefined ? Prisma.sql`AND "avgRating" >= ${query.minRating}` : Prisma.empty};
-        `;
+      const countResult: any[] = await this.prisma.$queryRaw`
+        SELECT COUNT(*)::int AS count
+        FROM "Mess"
+        WHERE status = 'ACTIVE'
+          AND ST_DWithin(
+            ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
+            ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography,
+            ${radiusMeters}
+          )
+          ${query.city ? Prisma.sql`AND LOWER(city) = LOWER(${query.city})` : Prisma.empty}
+          ${query.isVeg !== undefined ? Prisma.sql`AND "isVeg" = ${query.isVeg}` : Prisma.empty}
+          ${query.minRating !== undefined ? Prisma.sql`AND "avgRating" >= ${query.minRating}` : Prisma.empty};
+      `;
 
-        const totalItems = countResult[0]?.count || 0;
-        return buildPaginatedResponse(rawResults, totalItems, page, limit);
-      } catch (err: any) {
-        this.logger.warn(`PostGIS query failed or PostGIS extension not available: ${err.message}. Falling back to standard query.`);
-      }
+      const totalItems = countResult[0]?.count || 0;
+      return buildPaginatedResponse(rawResults, totalItems, page, limit);
     }
 
     // Standard relational query (when lat/lng omitted or in testing environment)

@@ -7,9 +7,11 @@ import {
   Query,
   UseGuards,
   HttpCode,
-  HttpStatus
+  HttpStatus,
+  ForbiddenException
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ErrorCode } from '../../common/error-codes';
 import { SubscriptionsService } from './subscriptions.service';
 import {
   CreateSubscriptionDto,
@@ -119,6 +121,12 @@ export class SubscriptionsController {
     @Param('id') id: string,
     @Body() dto: SwitchMessDto
   ) {
+    if (process.env.ENABLE_MESS_SWITCH !== 'true') {
+      throw new ForbiddenException({
+        code: ErrorCode.FEATURE_DISABLED,
+        message: 'Mess switching is currently disabled in V1.'
+      });
+    }
     return this.subscriptionsService.switchMess(user.userId, id, dto);
   }
 }
